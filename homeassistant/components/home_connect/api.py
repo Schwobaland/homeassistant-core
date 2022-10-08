@@ -16,6 +16,7 @@ from homeassistant.const import (
     CONF_ENTITIES,
     PERCENTAGE,
     TIME_SECONDS,
+    VOLUME_MILLILITERS,
 )
 from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.dispatcher import dispatcher_send
@@ -181,6 +182,74 @@ class DeviceWithPrograms(HomeConnectDevice):
                 ATTR_SIGN: sign,
             }
             for k, (unit, icon, device_class, sign) in sensors.items()
+        ]
+
+
+class DeviceWithBeverageCounters(HomeConnectDevice):
+    """Device that has beverage counters."""
+
+    def get_beverage_counters(self):
+        """Get a list of beverage counters."""
+
+        sensors = {
+            "Coffee": (
+                None,
+                "mdi:coffee",
+                "ConsumerProducts.CoffeeMaker.Status.BeverageCounterCoffee",
+            ),
+            "Powder Coffee": (
+                None,
+                "mdi:coffee",
+                "ConsumerProducts.CoffeeMaker.Status.BeverageCounterPowderCoffee",
+            ),
+            "Hot Water": (
+                VOLUME_MILLILITERS,
+                "mdi:coffee",
+                "ConsumerProducts.CoffeeMaker.Status.BeverageCounterHotWater",
+            ),
+            "Hot Water Cups": (
+                None,
+                "mdi:cup",
+                "ConsumerProducts.CoffeeMaker.Status.BeverageCounterHotWaterCups",
+            ),
+            "Hot Milk": (
+                None,
+                "mdi:coffee",
+                "ConsumerProducts.CoffeeMaker.Status.BeverageCounterHotMilk",
+            ),
+            "Frothy Milk": (
+                None,
+                "mdi:coffee",
+                "ConsumerProducts.CoffeeMaker.Status.BeverageCounterFrothyMilk",
+            ),
+            "Milk": (
+                None,
+                "mdi:coffee",
+                "ConsumerProducts.CoffeeMaker.Status.BeverageCounterMilk",
+            ),
+            "Coffee and Milk": (
+                None,
+                "mdi:coffee",
+                "ConsumerProducts.CoffeeMaker.Status.BeverageCounterCoffeeAndMilk",
+            ),
+            "Ristretto Espresso": (
+                None,
+                "mdi:coffee",
+                "ConsumerProducts.CoffeeMaker.Status.BeverageCounterRistrettoEspresso",
+            ),
+        }
+
+        return [
+            {
+                ATTR_DEVICE: self,
+                ATTR_DESC: k,
+                ATTR_UNIT: unit,
+                ATTR_KEY: key,
+                ATTR_ICON: icon,
+                ATTR_DEVICE_CLASS: None,
+                ATTR_SIGN: 1,
+            }
+            for k, (unit, icon, key) in sensors.items()
         ]
 
 
@@ -434,7 +503,12 @@ class Washer(
         }
 
 
-class CoffeeMaker(DeviceWithOpState, DeviceWithPrograms, DeviceWithRemoteStart):
+class CoffeeMaker(
+    DeviceWithOpState,
+    DeviceWithPrograms,
+    DeviceWithRemoteStart,
+    DeviceWithBeverageCounters,
+):
     """Coffee maker class."""
 
     PROGRAMS = [
@@ -462,10 +536,11 @@ class CoffeeMaker(DeviceWithOpState, DeviceWithPrograms, DeviceWithRemoteStart):
         op_state_sensor = self.get_opstate_sensor()
         program_sensors = self.get_program_sensors()
         program_switches = self.get_program_switches()
+        beverage_sensors = self.get_beverage_counters()
         return {
             "binary_sensor": [remote_start],
             "switch": program_switches,
-            "sensor": program_sensors + op_state_sensor,
+            "sensor": program_sensors + op_state_sensor + beverage_sensors,
         }
 
 
